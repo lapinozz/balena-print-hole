@@ -8,7 +8,8 @@ RUN PYTHONUSERBASE=/usr/local/ pip install --no-cache-dir \
 
 # Seed the initial config.yaml
 COPY ./config.yaml /data/config.yaml
+COPY ./entry.sh /usr/bin/entry.sh
 
-CMD ["./entry.sh"]
+CMD ["/usr/bin/entry.sh"]
 
 CMD ["octoprint","serve","--iknowwhatimdoing","--host","0.0.0.0"]
