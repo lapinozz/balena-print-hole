@@ -7,9 +7,9 @@ RUN PYTHONUSERBASE=/usr/local/ pip install --no-cache-dir \
     "https://github.com/eyal0/OctoPrint-PrintTimeGenius/archive/master.zip"
 
 # Seed the initial config.yaml
-COPY ./config.yaml /data/config.yaml
-COPY ./entry.sh /usr/bin/entry.sh
+COPY config.yaml /data/config.yaml
+COPY entry.sh /usr/bin/entry.sh
 
-CMD ["/usr/bin/entry.sh"]
+ENTRYPOINT ["sh", "/usr/bin/entry.sh"]
 
 CMD ["octoprint","serve","--iknowwhatimdoing","--host","0.0.0.0"]
