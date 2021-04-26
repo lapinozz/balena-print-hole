@@ -1,0 +1,28 @@
+name: "print-hole"
+type: "sw.application"
+description: "Pi-hole + Octoprint"
+assets:
+  repository:
+    type: "blob.asset"
+    data:
+      url: "https://github.com/klutchell/balena-pihole"
+  logo:
+    type: "blob.asset"
+    data:
+      url: "https://raw.githubusercontent.com/klutchell/balena-pihole/main/logo.png"
+data:
+  applicationConfigVariables:
+    - BALENA_HOST_CONFIG_gpu_mem: 64
+  applicationEnvironmentVariables:
+    - INTERFACE: 'eth0'
+    - WEBPASSWORD: 'mysecretpassword'
+    - PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
+    - FBCP_DISPLAY: ""
+  defaultDeviceType: "raspberrypi3"
+  supportedDeviceTypes:
+    - "raspberry-pi2"
+    - "raspberrypi3"
+    - "raspberrypi3-64"
+    - "raspberrypi4-64"
+    - "fincm3"
+    - "nanopi-neo-air"

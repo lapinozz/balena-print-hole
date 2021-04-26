@@ -1,0 +1,53 @@
+version: "2.1"
+
+volumes:
+  pihole_config:
+  dnsmasq_config:
+  octoprint-data: {}
+
+services:
+  octoprint:
+    build: ./balena-octoprint/octoprint
+    restart: always
+    volumes:
+      - 'octoprint-data:/data'
+    privileged: true
+    ports:
+      - '90:5000'
+    environment:
+      - UDEV=1
+    devices:
+      - '/dev:/dev'
+  # https://hub.docker.com/r/pihole/pihole
+  pihole:
+    build: ./balena-pihole/pihole
+    privileged: true
+    volumes:
+      - "pihole_config:/etc/pihole"
+      - "dnsmasq_config:/etc/dnsmasq.d"
+    dns:
+      - "127.0.0.1"
+      - "1.1.1.1"
+    network_mode: host
+
+  # https://github.com/klutchell/unbound-dnscrypt
+  unbound:
+    build: ./balena-pihole/unbound
+    privileged: true
+    ports:
+      - "5053:5053/tcp"
+      - "5053:5053/udp"
+
+  # https://github.com/balenablocks/fbcp
+  fbcp:
+    image: balenablocks/fbcp:1.0.0
+    privileged: true
+
+  # prevent plymouth from blocking fbcp
+  # https://github.com/klutchell/balena-pihole/issues/25
+  # https://github.com/balena-os/meta-balena/issues/1772
+  dbus:
+    build: ./balena-pihole/dbus
+    restart: on-failure
+    labels:
+        io.balena.features.dbus: "1"
