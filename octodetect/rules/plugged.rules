@@ -1,0 +1,1 @@
+ACTION=="add", KERNEL=="tty*", RUN+="/bin/sh -c '/app/octoprint_usb_autoconnect'"

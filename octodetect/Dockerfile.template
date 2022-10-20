@@ -1,0 +1,11 @@
+FROM balenalib/%%BALENA_MACHINE_NAME%%-alpine
+
+RUN install_packages curl
+
+COPY ./rules/plugged.rules /etc/udev/rules.d/plugged.rules
+COPY ./rules/unplugged.rules /etc/udev/rules.d/unplugged.rules
+COPY ./octoprint_usb_autoconnect /app/octoprint_usb_autoconnect
+COPY ./octoprint_usb_unplugged /app/octoprint_usb_unplugged
+COPY ./start.sh /app/start.sh
+
+CMD [ "/app/start.sh" ]

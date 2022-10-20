@@ -4,20 +4,31 @@ volumes:
   pihole_config:
   dnsmasq_config:
   octoprint-data: {}
+  traefik: {}
 
 services:
   octoprint:
-    build: ./balena-octoprint/octoprint
+    build: ./octoprint
     restart: always
     volumes:
       - 'octoprint-data:/data'
     privileged: true
     ports:
-      - '90:5000'
+      - '90:80'
+      - '443:443'
     environment:
       - UDEV=1
     devices:
       - '/dev:/dev'
+    labels:
+      io.balena.features.supervisor-api: '1'
+      io.balena.features.balena-api: '1'
+  mdns-publisher:
+    build: ./mdns-publisher
+    environment:
+      DBUS_SYSTEM_BUS_ADDRESS: 'unix:path=/host/run/dbus/system_bus_socket'
+    labels:
+      io.balena.features.dbus: '1'
   # https://hub.docker.com/r/pihole/pihole
   pihole:
     build: ./balena-pihole/pihole

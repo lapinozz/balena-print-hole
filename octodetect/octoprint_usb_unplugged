@@ -1,0 +1,1 @@
+echo "PRINTER UNPLUGGED" > /dev/shm/octodetect_state

@@ -1,0 +1,32 @@
+server:
+  commands:
+    serverRestartCommand: killall -15 supervisord
+webcam:
+  stream: /webcam/?action=stream
+  snapshot: http://127.0.0.1:8080/?action=snapshot
+  ffmpeg: /usr/bin/ffmpeg
+plugins:
+  DisplayLayerProgress:
+    showAllPrinterMessages: false
+    showHeightInStatusBar: false
+    showLayerInStatusBar: false
+    showOnBrowserTitle: false
+    showOnNavBar: false
+    showOnPrinterDisplay: false
+  announcements:                                                                                                                                                                                                                                                                                                         
+    _config_version: 1                                                                                                                                                                                                                                                                                                 
+    enabled_channels:                                                                                                                                                                                                                                                                                                  
+    - _important         
+  mqtt:
+    broker:
+      url:
+  psucontrol:
+    _config_version: 3
+    disconnectOnPowerOff: true
+    offSysCommand: python3 /usr/src/octobalena/mqtt_espurna_control.py off
+    onSysCommand: python3 /usr/src/octobalena/mqtt_espurna_control.py on
+    switchingMethod: SYSTEM
+serial:                                                                                                                                 
+  autoconnect: true                                                                                                                     
+  baudrate: 0                                                                                                                           
+  port: AUTO

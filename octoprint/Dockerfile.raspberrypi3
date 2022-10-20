@@ -1,0 +1,87 @@
+FROM balenalib/%%BALENA_MACHINE_NAME%%-debian:buster
+
+# Install Dependencies
+RUN apt-get update && install_packages libavahi-compat-libdnssd1 \
+                                       zlib1g-dev libjpeg-dev \
+                                       python3-dev \
+                                       python3-wheel  \
+                                       python3-pip \
+                                       fontconfig \
+                                       libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libswresample-dev \
+                                       libsrtp2-dev libsrtp2-1 libopus-dev libvpx-dev \
+                                       ffmpeg \
+                                       pkg-config \
+                                       python-dev python3-dev \
+                                       gcc g++ linux-headers wget dosfstools \
+                                       imagemagick libv4l-dev \
+                                       git make cmake \
+                                       haproxy dbus \
+                                       libatlas-base-dev \
+                                       v4l-utils
+
+# Update pip
+RUN pip3 install --upgrade pip
+
+# Install OctoPrint v1.5.2
+RUN pip3 install OctoPrint==1.5.2
+
+# Install PyBonjour and Zeroconf
+RUN pip install --no-cache-dir https://github.com/DynamicDevices/pybonjour-python3/archive/master.zip zeroconf
+
+# Install supervisor
+RUN pip3 install supervisor
+
+# Install Python dependencies for MattaCloud
+RUN pip3 install aiohttp aiortc numpy opencv-python
+
+# Install paho mqtt for power control
+RUN pip3 install paho-mqtt
+
+# Build mjpg-streamer
+#RUN ln -s /usr/include/linux/videodev2.h /usr/include/linux/videodev.h
+RUN git clone https://github.com/jacksonliam/mjpg-streamer.git && cd mjpg-streamer/mjpg-streamer-experimental \
+ && sed -i 's|#include <linux/stat.h>|//#include <linux/stat.h>|g' utils.c \
+ && make && make install
+ 
+# OctoDash requirements, it is stated these plugins are mandatory on the project wiki:
+# https://github.com/UnchartedBull/OctoDash/wiki/Installation#automatic-installation
+RUN pip3 install --no-cache-dir \ 
+    "https://github.com/marian42/octoprint-preheat/archive/0.5.1.zip" \ 
+    "https://github.com/OllisGit/OctoPrint-DisplayLayerProgress/archive/1.24.0.zip" \ 
+    "https://github.com/kantlivelong/OctoPrint-PSUControl/archive/0.1.10.zip" \ 
+    "https://github.com/OctoPrint/OctoPrint-MQTT/archive/0.8.7.zip" \
+    "https://github.com/OllisGit/OctoPrint-FilamentManager/archive/1.6.3.zip" \
+    "https://github.com/eyal0/OctoPrint-PrintTimeGenius/archive/2.2.7.zip" \
+    "https://github.com/jneilliii/OctoPrint-UltimakerFormatPackage/archive/0.2.1.zip" \
+    "https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/archive/master.zip" \ 
+    "https://github.com/jneilliii/OctoPrint-BLTouch/archive/0.3.4.zip" \
+    "https://github.com/jneilliii/OctoPrint-BedLevelVisualizer/archive/1.0.0.zip" \
+    "https://github.com/FormerLurker/Octolapse/archive/v0.4.1.zip" \
+    "https://github.com/johnnyruz/OctoPrint-OctoVox/archive/0.1.6.zip" \
+    "https://github.com/costas-basdekis/MarlinGcodeDocumentation/archive/v0.11.0.zip"
+
+# Adds support for obtaining OCTOPRINT_APIKEY and setting the octodash service variable automatically
+# https://github.com/MatthewCroughan/octobalena/pull/10
+RUN install_packages curl jq
+COPY update-balena-app.sh /usr/src/octobalena/update-balena-app.sh
+COPY start-mjpg-streamer.sh /usr/src/octobalena/start-mjpg-streamer.sh
+
+# Seed the initial config.yaml 
+COPY ./config.yaml /data/config.yaml
+
+# Copy in the script that allows us to interface with espurna relays over mqtt
+COPY ./mqtt_espurna_control.py /usr/src/octobalena/mqtt_espurna_control.py
+
+# Add root user to video group to make vcgencmd work
+RUN usermod -aG video root
+
+# Generate SSL cert
+RUN cd /etc/ssl && openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 --nodes -subj "/C=GB/ST=Merseyside/L=Liverpool/O=Dynamic Devices/OU=Org/CN=localhost" \
+ && cat cert.pem key.pem > ssl-certs.pem
+COPY ./supervisord.conf /etc/supervisor/supervisord.conf
+
+COPY ./haproxy.cfg /etc/haproxy/haproxy.cfg
+
+COPY ./udevd.sh /app/udevd.sh
+
+CMD ["/bin/bash", "/app/udevd.sh"]

@@ -1,0 +1,1 @@
+FROM --platform=linux/arm traefik:2.2.1

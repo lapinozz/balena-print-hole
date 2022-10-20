@@ -1,0 +1,46 @@
+FROM --platform=linux/arm/v7 nunofgs/octoprint:master-alpine
+
+# Install Raspberry Pi Libs and mDNS Prerequisites for PyBonjour
+RUN apk update && apk add --no-cache avahi-compat-libdns_sd raspberrypi && \
+    ln -s /opt/vc/bin/* /usr/bin/
+
+# Install build deps for various plugins, Octolapse for example. Should find a way for these to be conditionally installed in the Future.
+RUN apk add --no-cache --virtual .build-deps \
+    zlib-dev \
+    jpeg-dev 
+# Install PyBonjour and Zeroconf
+RUN pip install --no-cache-dir https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/pybonjour/pybonjour-1.1.1.tar.gz zeroconf
+
+# Install eudev so we can use udevd properly
+RUN apk update && apk add --no-cache eudev
+
+# OctoDash requirements, it is stated these plugins are mandatory on the project wiki:
+# https://github.com/UnchartedBull/OctoDash/wiki/Installation#automatic-installation
+
+RUN PYTHONUSERBASE=/usr/local/ pip install --no-cache-dir \
+    "https://github.com/marian42/octoprint-preheat/archive/master.zip" \
+    "https://github.com/OllisGit/OctoPrint-DisplayLayerProgress/releases/latest/download/master.zip" \
+    "https://github.com/kantlivelong/OctoPrint-PSUControl/archive/master.zip" \
+    "https://github.com/OctoPrint/OctoPrint-MQTT/archive/master.zip" \
+    "https://github.com/malnvenshorn/OctoPrint-FilamentManager/archive/master.zip" \
+    "https://github.com/eyal0/OctoPrint-PrintTimeGenius/archive/master.zip" \
+    "https://github.com/jneilliii/OctoPrint-UltimakerFormatPackage/archive/master.zip" \
+    "https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/archive/master.zip" \
+    "https://github.com/vitormhenrique/OctoPrint-Enclosure/archive/master.zip"
+
+# Adds support for obtaining OCTOPRINT_APIKEY and setting the octodash service variable automatically  
+# https://github.com/MatthewCroughan/octobalena/pull/10    
+RUN apk add --no-cache curl jq
+COPY update-balena-app.sh /usr/src/octobalena/update-balena-app.sh
+
+# Seed the initial config.yaml
+COPY ./config.yaml /data/config.yaml
+
+# Copy in the script that allows us to interface with espurna relays over mqtt
+COPY ./mqtt_espurna_control.py /usr/src/octobalena/mqtt_espurna_control.py
+
+COPY ./supervisord.conf /etc/supervisor/supervisord.conf
+COPY ./udevd.sh /app/udevd.sh
+
+CMD ["sh", "/app/udevd.sh"]
+

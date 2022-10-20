@@ -1,0 +1,6 @@
+#!/bin/sh
+echo "PRINTER PLUGGED IN" >> /dev/shm/octodetect_state
+
+echo "TRYING TO CONNECT VIA OCTOPRINT API..." >> /dev/shm/octodetect_state
+echo $(curl -siL -X POST -H "Content-Type: application/json" -H "X-Api-Key: ${OCTOPRINT_APIKEY}" http://octoprint/api/connection -d '{"command":"connect"}') >> /dev/shm/octodetect_state
+
